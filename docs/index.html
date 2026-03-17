@@ -1,1 +1,423 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工程实现版 - X平台精选日报</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --paper: #fffdf8;
+      --line: #ddcfb7;
+      --ink: #2a251c;
+      --muted: #6d614f;
+      --accent: #b65a1e;
+      --heading: #8f3f11;
+    }
+    [data-theme="dark"] {
+      --bg: #141619;
+      --paper: #1f242b;
+      --line: #394553;
+      --ink: #f0f3f8;
+      --muted: #b4bfd1;
+      --accent: #ffa356;
+      --heading: #ffb172;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 20px 16px 40px; }
+    .header {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      padding: 16px;
+      border-radius: 14px;
+      text-align: center;
+      position: relative;
+    }
+    .title {
+      margin: 0;
+      font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+      font-size: clamp(26px, 4vw, 40px);
+      letter-spacing: 0.4px;
+    }
+    .date { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .theme-btn {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .controls {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    select, input, button {
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+      color: var(--ink);
+      padding: 0 10px;
+      font-size: 14px;
+    }
+    #resetBtn {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .blk {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .t {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--accent);
+      font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+    }
+    .digest-heading {
+      margin: 14px 0 8px;
+      color: var(--heading);
+      font-size: 17px;
+      font-weight: 700;
+      font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+    }
+    .digest-list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .digest-line {
+      margin: 8px 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .k {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .k .a { color: var(--muted); font-size: 12px; }
+    .k .b { margin-top: 4px; font-size: 24px; font-weight: 700; line-height: 1; }
+    .result { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+    .list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .post-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .meta {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .rank { font-weight: 700; color: var(--ink); }
+    .score {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      color: var(--accent);
+    }
+    .post-title {
+      margin: 10px 0 8px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .content-box {
+      margin: 8px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    .metric-line {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .link {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .foot {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      text-align: center;
+    }
+    @media (max-width: 1080px) {
+      .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .controls { grid-template-columns: 1fr; }
+      .kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .theme-btn { position: static; margin-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="header">
+      <h1 class="title">X平台精选日报</h1>
+      <div class="date">日期：<span id="reportDate"></span></div>
+      <button id="themeBtn" class="theme-btn">深色模式</button>
+    </section>
 
+    <section class="controls">
+      <select id="authorFilter"></select>
+      <select id="typeFilter">
+        <option value="all">全部类型</option>
+        <option value="hot">热帖</option>
+        <option value="long">长文</option>
+        <option value="bookmark">高书签</option>
+      </select>
+      <select id="dateFilter"></select>
+      <select id="timeFilter">
+        <option value="all">全天</option>
+        <option value="lateNight">凌晨 00-06</option>
+        <option value="morning">上午 06-12</option>
+        <option value="afternoon">下午 12-18</option>
+        <option value="evening">晚上 18-24</option>
+      </select>
+      <select id="sortFilter">
+        <option value="heat">按热度排序</option>
+        <option value="bookmark">按书签排序</option>
+        <option value="time">按时间排序</option>
+      </select>
+      <input id="keywordFilter" placeholder="按关键词搜索标题/标签/内容" />
+      <button id="resetBtn">重置筛选</button>
+    </section>
+
+    <section class="blk">
+      <h2 class="t">原始摘要</h2>
+      <div id="digestBox"><p class="digest-line">以下是基于提供的X帖子的每日社会媒体情报报告。所有内容严格来源于帖子文本、指标和提供的附加图像描述，无任何外部推测或虚构事实。</p><h3 class="digest-heading">每日概述</h3><ul class="digest-list"><li>AI辅助编程（Vibe Coding）指南在中文AI社区引发较高关注，@AI_Jasonyu分享的详细原则获得5444.9高分和7.1万+浏览，成为当日最热帖。</li><li>@vista8积极推广开源工具封装与集成，如将opencli封装为Claude Code/龙虾可调用的Skill，支持一键浏览HackerNews、知乎私信、微博热搜等，相关帖子多次上榜热帖。</li><li>AI工具生态讨论活跃，包括开源剪映自部署、智谱AutoClaw网页自动化、香港Gemini开放、happyCapy/Claude Code友好产品等，反映开发者对高效AI工作流的持续兴趣。</li><li>内容消费与生产趋势显现：好内容忽略AI生成痕迹、Readwise每周推荐、Producthunt排名跟踪工具被分享，强调价值导向而非形式。</li><li>当日帖子主要由两位高活跃作者（@AI_Jasonyu 和 @vista8）主导，合计覆盖AI编程方法论、工具封装、产品可用性和实用分享。</li></ul><h3 class="digest-heading">分作者总结</h3><p class="digest-line"><strong>@AI_Jasonyu</strong>（5条帖子，总分较高，热帖主导）</p><ul class="digest-list"><li>发布详细“Vibe Coding指南”，强调AI优先、上下文第一、系统思考、奥卡姆剃刀等原则，获最高互动（1043赞、1116收藏、7.1万浏览）。</li><li>分享开源剪映自部署方案，指出很多人尚不知可自行部署，获得中等热度。</li><li>宣布香港用户正式可用Gemini，无需VPN，标志区域AI服务开放进展。</li><li>其他短帖涉及本地热点人物调侃，互动较低。</li></ul><p class="digest-line"><strong>@vista8</strong>（7条帖子，覆盖工具集成与产品观察）</p><ul class="digest-list"><li>多次推广opencli封装为Skill，支持Claude Code调用浏览任意网站热帖/社交内容，获较高收藏和浏览。</li><li>分享Readwise每周文章推荐、Producthunt排名跟踪网站等内容发现工具。</li><li>点评happyCapy为小白最友好Claude Code产品，并计划邀请创始人直播。</li><li>体验智谱AutoClaw网页自动化，类比“按键精灵”，认可其AI First思路。</li><li>哲学性短评：好内容让人忽略AI味，关注价值而非形式；看好某些项目。</li></ul><h3 class="digest-heading">热帖洞察</h3><ul class="digest-list"><li><strong>最高热帖</strong>（@AI_Jasonyu 的Vibe Coding指南，score 5444.9）：内容系统全面（道-法-术结构），提供实用原则（如目的主导、上下文第一、能抄不写、一次只改一模块），契合当前AI编程痛点；高收藏（1116）表明开发者保存意愿强，高浏览（7.1万）反映广泛传播。</li><li><strong>opencli Skill封装系列</strong>（@vista8 多条，score 2022.8 / 1482.0 / 1363.4）：解决“一句话操作”社交/资讯平台痛点，支持自迭代生成任意网站CLI，高度实用性驱动高互动；Claude Code集成降低门槛，易被AI开发者快速采用。</li><li>其他热帖如Gemini香港开放、开源剪映，解决地域/工具可用性问题，引发区域用户共鸣。</li></ul><h3 class="digest-heading">长文洞察</h3><ul class="digest-list"><li><strong>Vibe Coding核心方法论</strong>（源于@AI_Jasonyu长帖及图像）：以AI为第一生产力，围绕“目的”展开所有开发；强调上下文质量（垃圾进垃圾出）、系统性拆解（实体-链接-功能/目的）、输入处理输出框架；实践上优先规划结构、抄袭现有仓库、接口先行、文档即上下文、专注单任务迭代；避免技术债，适用AI结对编程场景。</li><li><strong>工具封装与AI First趋势</strong>（@vista8 opencli Skill及AutoClaw）：开源CLI工具可快速封装为AI可调用Skill，实现社交平台热帖/私信/热搜一键操作；智谱AutoClaw展示浏览器自动化在企业流程（如飞书机器人创建）的潜力，体现“AI控制网页”向生产力工具演进。</li></ul><h3 class="digest-heading">可执行建议</h3><p class="digest-line">1. <strong>P1</strong>：立即测试并推广Vibe Coding指南中的原则（如上下文优先、一次只改一模块、能抄不写），应用于团队AI辅助开发流程，减少技术债并提升效率。</p><p class="digest-line">2. <strong>P1</strong>：评估并集成opencli Skill到Claude Code或类似环境中，用于快速监控HackerNews/Producthunt/知乎/微博等平台动态，缩短信息获取链路。</p><p class="digest-line">3. <strong>P2</strong>：关注香港Gemini全面开放后的使用体验，测试网页版+App在本地节点的稳定性，作为多模型策略补充。</p><p class="digest-line">4. <strong>P2</strong>：探索开源剪映自部署方案，作为视频编辑工具链备选，结合AI生成降低内容生产成本。</p><p class="digest-line">5. <strong>P3</strong>：跟踪智谱AutoClaw等网页自动化工具的进展，评估在内部流程自动化（如文档/权限管理）的潜在ROI。</p><h3 class="digest-heading">证据帖子</h3><ul class="digest-list"><li>https://x.com/AI_Jasonyu/status/2033216706722861420 — Vibe Coding完整指南（道-法-术），最高分热帖 + 图像展示。</li><li>https://x.com/vista8/status/2033426419523756147 — opencli封装为Skill，支持一键热帖/社交操作，高收藏。</li><li>https://x.com/vista8/status/2033571746033627145 — Claude Code中opencli Skill实际好用确认。</li><li>https://x.com/AI_Jasonyu/status/2033556980275827185 — 开源剪映自部署介绍。</li><li>https://x.com/AI_Jasonyu/status/2033472300339835052 — 香港Gemini开放，无VPN可用。</li><li>https://x.com/vista8/status/2033372760265851056 — 智谱AutoClaw网页自动化体验。</li><li>https://x.com/vista8/status/2033306913124094116 — 好内容忽略AI味的价值导向观点。</li><li>https://x.com/vista8/status/2033397042752668117 — Readwise每周推荐值得看。</li></ul></div>
+    </section>
+
+    <section class="blk">
+      <h2 class="t">核心数据</h2>
+      <div class="kpi">
+        <div class="k"><div class="a">总贴数</div><div class="b" id="metricTotal">0</div></div>
+        <div class="k"><div class="a">热帖数</div><div class="b" id="metricHot">0</div></div>
+        <div class="k"><div class="a">长文数</div><div class="b" id="metricLong">0</div></div>
+        <div class="k"><div class="a">书签数</div><div class="b" id="metricBookmark">0</div></div>
+        <div class="k"><div class="a">最高热度</div><div class="b" id="metricTop">0</div></div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <h2 class="t">帖子详情</h2>
+      <p class="result" id="resultCount"></p>
+      <div class="list" id="postList"></div>
+    </section>
+
+    <section class="foot">
+      <div>数据来源：X平台</div>
+      <div>生成日期：<span id="genDate"></span></div>
+      <div>作者：心光</div>
+    </section>
+  </main>
+
+  <script>
+    const POSTS = [{"id":"AI_Jasonyu-1-2026-03-16","rank":1,"author":"AI_Jasonyu","score":5444.9,"time":"2026-03-15 16:20:12Z","localDate":"2026-03-16","localHour":0,"localLabel":"2026-03-16 00:20","title":"在Github上又找到个好东西：Vibe Coding指南","content":"在Github上又找到个好东西：Vibe Coding指南。 🧭 道 -- 凡是 ai 能做的，就不要人工做 -- 一切问题问 ai -- 目的主导：开发过程中的一切动作围绕\"目的\"展开 -- 上下文是 vibe coding 的第一性要素，垃圾进，垃圾出 -- 系统性思考，实体，链接，功能/目的，三个维度 -- 数据与函数即是编程的一切 -- 输入，处理，输出刻画整个过程 -- 多问 ai 是什么？，为什么？，怎...","url":"https://x.com/AI_Jasonyu/status/2033216706722861420","tags":["热帖","AI","GitHub","高浏览"],"metrics":{"like":1043,"repost":225,"reply":26,"quote":7,"bookmark":1116,"view":71445}},{"id":"vista8-2-2026-03-16","rank":2,"author":"vista8","score":2022.86,"time":"2026-03-16 06:13:32Z","localDate":"2026-03-16","localHour":14,"localLabel":"2026-03-16 14:13","title":"把卡比大神的Opencli，封装成Skill，方便Claude Code和龙虾调用","content":"把卡比大神的Opencli，封装成Skill，方便Claude Code和龙虾调用。 安装：npx skills add joeseesun/opencli-skill 场景如下： ① 一句话查看HackerNews的热帖，写入Obsidian或飞书。 ② 一句话查看知乎私信，一句话查看微博热搜，发微博等。 最酷是Opencli支持自迭代生成任意网站Cli。 比如让AI给Producthunt写了个Cli，Githu...","url":"https://x.com/vista8/status/2033426419523756147","tags":["热帖","AI","GitHub","Product Hunt"],"metrics":{"like":259,"repost":52,"reply":15,"quote":3,"bookmark":397,"view":38893}},{"id":"vista8-3-2026-03-16","rank":3,"author":"vista8","score":1482.02,"time":"2026-03-16 15:51:00Z","localDate":"2026-03-16","localHour":23,"localLabel":"2026-03-16 23:51","title":"有了卡比兄的opencli","content":"有了卡比兄的opencli。 改造成skill后，Claude code中就可以完成任意网站的热帖浏览。 真的好用！地址见评论 https://t.co/GPR4KpWwH7","url":"https://x.com/vista8/status/2033571746033627145","tags":["热帖","AI"],"metrics":{"like":195,"repost":30,"reply":20,"quote":3,"bookmark":359,"view":21651}},{"id":"vista8-4-2026-03-16","rank":4,"author":"vista8","score":1363.44,"time":"2026-03-16 04:16:48Z","localDate":"2026-03-16","localHour":12,"localLabel":"2026-03-16 12:16","title":"Readwise的每周文章推荐还是很值得看的","content":"Readwise的每周文章推荐还是很值得看的。 https://t.co/yPHlQvht0P https://t.co/Ccp4Y9jxeR","url":"https://x.com/vista8/status/2033397042752668117","tags":["热帖"],"metrics":{"like":226,"repost":36,"reply":10,"quote":1,"bookmark":278,"view":22572}},{"id":"AI_Jasonyu-5-2026-03-16","rank":5,"author":"AI_Jasonyu","score":1297.7,"time":"2026-03-16 14:52:20Z","localDate":"2026-03-16","localHour":22,"localLabel":"2026-03-16 22:52","title":"这是开源版本的剪映，确实有很多人还不知道的，其实可以自己部署的","content":"这是开源版本的剪映，确实有很多人还不知道的，其实可以自己部署的。 https://t.co/Ned1haBMD8","url":"https://x.com/AI_Jasonyu/status/2033556980275827185","tags":["热帖"],"metrics":{"like":211,"repost":43,"reply":5,"quote":3,"bookmark":240,"view":23085}},{"id":"vista8-6-2026-03-16","rank":6,"author":"vista8","score":1022.12,"time":"2026-03-15 22:18:39Z","localDate":"2026-03-16","localHour":6,"localLabel":"2026-03-16 06:18","title":"好内容，会让人忽略是否由AI总结生成","content":"好内容，会让人忽略是否由AI总结生成。 关注价值，不关注AI味，新时代的自我教育。","url":"https://x.com/vista8/status/2033306913124094116","tags":["热帖","AI"],"metrics":{"like":69,"repost":6,"reply":3,"quote":2,"bookmark":91,"view":37156}},{"id":"vista8-7-2026-03-16","rank":7,"author":"vista8","score":656.1,"time":"2026-03-16 01:41:40Z","localDate":"2026-03-16","localHour":9,"localLabel":"2026-03-16 09:41","title":"happyCapy是普通小白最友好的用上claude code的产品","content":"happyCapy是普通小白最友好的用上claude code的产品。 改天邀请创始人到『未来硅世界』直播聊聊产品灵感来源和背后故事，","url":"https://x.com/vista8/status/2033358004134007281","tags":["热帖","AI"],"metrics":{"like":40,"repost":2,"reply":14,"quote":0,"bookmark":74,"view":21705}},{"id":"AI_Jasonyu-8-2026-03-16","rank":8,"author":"AI_Jasonyu","score":428.4,"time":"2026-03-16 09:15:51Z","localDate":"2026-03-16","localHour":17,"localLabel":"2026-03-16 17:15","title":"🇭🇰香港用户终于也可以用上Gemini了兄弟们","content":"🇭🇰香港用户终于也可以用上Gemini了兄弟们。 自由港的味道又回来了，现在Google官方终于逐步开放全港用户，免VPN直连网页版+后续App！ 以后香港节点也可以使用Gemini的服务了，说实话以前一直用新加坡的，都没这个感知~~ https://t.co/MeFjWUvwJP","url":"https://x.com/AI_Jasonyu/status/2033472300339835052","tags":["热帖","AI"],"metrics":{"like":37,"repost":3,"reply":20,"quote":2,"bookmark":6,"view":16320}},{"id":"vista8-9-2026-03-16","rank":9,"author":"vista8","score":397.04,"time":"2026-03-16 02:40:18Z","localDate":"2026-03-16","localHour":10,"localLabel":"2026-03-16 10:40","title":"今天才抽空体验智谱的AutoClaw","content":"今天才抽空体验智谱的AutoClaw。 自动控制网页完成飞书机器人创建，权限设置，版本创建提交申请... 像装了按键精灵,哈哈哈。 团队有想法，有点AI First的意味！ https://t.co/jzTOa2wyAQ","url":"https://x.com/vista8/status/2033372760265851056","tags":["热帖","AI"],"metrics":{"like":26,"repost":5,"reply":8,"quote":0,"bookmark":44,"view":12602}},{"id":"vista8-10-2026-03-16","rank":10,"author":"vista8","score":303.38,"time":"2026-03-16 06:31:45Z","localDate":"2026-03-16","localHour":14,"localLabel":"2026-03-16 14:31","title":"一个专门查看Producthunt产品，选发布日期，跟踪排名变化趋势的网站","content":"一个专门查看Producthunt产品，选发布日期，跟踪排名变化趋势的网站。 https://t.co/GYYHBdRUS4 https://t.co/k1oUmM2f5I","url":"https://x.com/vista8/status/2033431004397068543","tags":["热帖","Product Hunt"],"metrics":{"like":40,"repost":5,"reply":2,"quote":2,"bookmark":51,"view":6919}},{"id":"AI_Jasonyu-11-2026-03-16","rank":11,"author":"AI_Jasonyu","score":155.74,"time":"2026-03-16 00:55:19Z","localDate":"2026-03-16","localHour":8,"localLabel":"2026-03-16 08:55","title":"长沙火不火我不知道，这个女的，😮哦不，这个男的是真的火了🔥","content":"长沙火不火我不知道，这个女的，😮哦不，这个男的是真的火了🔥","url":"https://x.com/AI_Jasonyu/status/2033346339002827148","tags":["热帖"],"metrics":{"like":9,"repost":0,"reply":11,"quote":0,"bookmark":1,"view":6137}},{"id":"vista8-12-2026-03-16","rank":12,"author":"vista8","score":120.8,"time":"2026-03-16 05:18:36Z","localDate":"2026-03-16","localHour":13,"localLabel":"2026-03-16 13:18","title":"加油，看好这个项目","content":"加油，看好这个项目！","url":"https://x.com/vista8/status/2033412597169729764","tags":["热帖"],"metrics":{"like":3,"repost":0,"reply":2,"quote":0,"bookmark":1,"view":5590}}];
+    const REPORT_DATE = "2026-03-16";
+
+    const hasHot = (p) => p.tags.includes("热帖") || Number(p.score || 0) >= 120;
+    const hasLong = (p) => p.tags.includes("长文") || String(p.content || "").length >= 180;
+    const hasHighBookmark = (p) => Number(p.metrics?.bookmark || 0) >= 80;
+    const $ = (id) => document.getElementById(id);
+
+    function formatNum(value) {
+      return Number(value || 0).toLocaleString("zh-CN");
+    }
+
+    function cardHtml(post) {
+      const tagsHtml = (post.tags || []).map((t) => `<span class="tag">${t}</span>`).join("");
+      return `<article class="post-card">
+        <div class="meta">
+          <span class="rank">#${post.rank}</span>
+          <span>${post.author}</span>
+          <span class="score">热度 ${Number(post.score || 0).toFixed(2)}</span>
+          <span>${post.localLabel || post.time || ""}</span>
+        </div>
+        <h3 class="post-title">${post.title}</h3>
+        <div class="tags">${tagsHtml}</div>
+        <div class="content-box">${post.content || "（无内容）"}</div>
+        <div class="metric-line">点赞 ${formatNum(post.metrics?.like)} | 转发 ${formatNum(post.metrics?.repost)} | 评论 ${formatNum(post.metrics?.reply)} | 引用 ${formatNum(post.metrics?.quote)} | 收藏 ${formatNum(post.metrics?.bookmark)} | 浏览 ${formatNum(post.metrics?.view)}</div>
+        <a class="link" href="${post.url}" target="_blank" rel="noopener noreferrer">查看原帖</a>
+      </article>`;
+    }
+
+    function calcMetrics(rows) {
+      let hot = 0;
+      let long = 0;
+      let bookmark = 0;
+      let top = 0;
+      for (const row of rows) {
+        if (hasHot(row)) hot += 1;
+        if (hasLong(row)) long += 1;
+        bookmark += Number(row.metrics?.bookmark || 0);
+        top = Math.max(top, Number(row.score || 0));
+      }
+      return { total: rows.length, hot, long, bookmark, top };
+    }
+
+    function sortRows(rows, mode) {
+      const copied = [...rows];
+      if (mode === "bookmark") {
+        copied.sort((a, b) => Number(b.metrics?.bookmark || 0) - Number(a.metrics?.bookmark || 0));
+      } else if (mode === "time") {
+        copied.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      } else {
+        copied.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+      }
+      return copied;
+    }
+
+    function initSelectOptions() {
+      const authors = [...new Set(POSTS.map((p) => p.author))].sort();
+      const dates = [...new Set(POSTS.map((p) => p.localDate).filter(Boolean))].sort().reverse();
+      $("authorFilter").innerHTML = '<option value="all">全部博主</option>' + authors.map((a) => `<option value="${a}">${a}</option>`).join("");
+      $("dateFilter").innerHTML = '<option value="all">全部日期</option>' + dates.map((d) => `<option value="${d}">${d}</option>`).join("");
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      $("themeBtn").textContent = theme === "dark" ? "浅色模式" : "深色模式";
+      localStorage.setItem("x_engineering_theme", theme);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem("x_engineering_theme");
+      applyTheme(saved === "dark" ? "dark" : "light");
+    }
+
+    function render() {
+      const author = $("authorFilter").value;
+      const type = $("typeFilter").value;
+      const date = $("dateFilter").value;
+      const time = $("timeFilter").value;
+      const sort = $("sortFilter").value;
+      const keyword = $("keywordFilter").value.trim().toLowerCase();
+
+      let rows = POSTS.filter((p) => {
+        const byAuthor = author === "all" || p.author === author;
+        const byDate = date === "all" || p.localDate === date;
+        const byTime =
+          time === "all" ||
+          (time === "lateNight" && p.localHour >= 0 && p.localHour < 6) ||
+          (time === "morning" && p.localHour >= 6 && p.localHour < 12) ||
+          (time === "afternoon" && p.localHour >= 12 && p.localHour < 18) ||
+          (time === "evening" && p.localHour >= 18 && p.localHour <= 23);
+        const byType =
+          type === "all" ||
+          (type === "hot" && hasHot(p)) ||
+          (type === "long" && hasLong(p)) ||
+          (type === "bookmark" && hasHighBookmark(p));
+        const merged = (p.title + " " + p.content + " " + (p.tags || []).join(" ")).toLowerCase();
+        const byKeyword = !keyword || merged.includes(keyword);
+        return byAuthor && byDate && byTime && byType && byKeyword;
+      });
+
+      rows = sortRows(rows, sort);
+      const metrics = calcMetrics(rows);
+
+      $("metricTotal").textContent = metrics.total;
+      $("metricHot").textContent = metrics.hot;
+      $("metricLong").textContent = metrics.long;
+      $("metricBookmark").textContent = formatNum(metrics.bookmark);
+      $("metricTop").textContent = Number(metrics.top).toFixed(2);
+      $("resultCount").textContent = `当前显示 ${rows.length} / ${POSTS.length} 条`;
+      $("postList").innerHTML = rows.map(cardHtml).join("");
+    }
+
+    function resetFilters() {
+      $("authorFilter").value = "all";
+      $("typeFilter").value = "all";
+      $("dateFilter").value = "all";
+      $("timeFilter").value = "all";
+      $("sortFilter").value = "heat";
+      $("keywordFilter").value = "";
+      render();
+    }
+
+    $("reportDate").textContent = REPORT_DATE;
+    $("genDate").textContent = new Date().toLocaleString("zh-CN", { hour12: false });
+    initSelectOptions();
+    initTheme();
+    render();
+
+    ["authorFilter", "typeFilter", "dateFilter", "timeFilter", "sortFilter"].forEach((id) => {
+      $(id).addEventListener("change", render);
+    });
+    $("keywordFilter").addEventListener("input", render);
+    $("resetBtn").addEventListener("click", resetFilters);
+    $("themeBtn").addEventListener("click", () => {
+      const now = document.documentElement.getAttribute("data-theme") || "light";
+      applyTheme(now === "dark" ? "light" : "dark");
+    });
+  </script>
+</body>
+</html>
